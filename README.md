@@ -31,7 +31,7 @@ El navegador necesita JavaScript, WebGL, Canvas 2D y Web Audio. Si WebGL no est�
 
 | Control | Función |
 | --- | --- |
-| Menús inferiores | Elegir entre diez fractales y las paletas Neón, Fuego y Océano. Al cambiar de fractal se restablecen su vista y sus parámetros iniciales. |
+| Menús inferiores | Elegir entre diez fractales y las paletas Fullcolor, Terre y Blue. Al cambiar de fractal se restablecen su vista y sus parámetros iniciales. |
 | Puntero o pantalla táctil | Modificar los parámetros de la figura. El movimiento se suaviza y no desplaza la cámara. |
 | Mantener pulsada la imagen | Producir sonido; al soltar, el volumen disminuye progresivamente. |
 | Botón de sonido | Silenciar o activar el audio. |

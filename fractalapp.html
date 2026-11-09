@@ -270,7 +270,7 @@
                 languageLabel: 'Cambiar idioma a inglés', languageButton: 'English',
                 buttons: { in: 'Acercar', out: 'Alejar', u: 'Mover arriba', d: 'Mover abajo', l: 'Mover a la izquierda', r: 'Mover a la derecha', home: 'Reiniciar vista' },
                 names: { sierpinski: 'Triángulo de Sierpinski', koch: 'Copo de nieve de Koch', dragon: 'Curva del dragón', tree: 'Árbol fractal' },
-                palettes: { 'Neón': 'Neón', 'Fuego': 'Fuego', 'Océano': 'Océano' },
+                palettes: { 'Fullcolor': 'Fullcolor', 'Terre': 'Terre', 'Blue': 'Blue' },
                 authors: { multibrot: 'Generalización del conjunto de Mandelbrot', julia3: 'Gaston Julia (1918), grado 3', tree: 'Sistema de Lindenmayer (1968)' },
                 rules: {
                     sierpinski: 'Cada triángulo genera 3 triángulos más pequeños, que pueden girar.',
@@ -310,7 +310,7 @@
                 languageLabel: 'Change language to Spanish', languageButton: 'Español',
                 buttons: { in: 'Zoom in', out: 'Zoom out', u: 'Move up', d: 'Move down', l: 'Move left', r: 'Move right', home: 'Reset view' },
                 names: { sierpinski: 'Sierpiński triangle', koch: 'Koch snowflake', dragon: 'Dragon curve', tree: 'Fractal tree' },
-                palettes: { 'Neón': 'Neon', 'Fuego': 'Fire', 'Océano': 'Ocean' },
+                palettes: { 'Fullcolor': 'Full color', 'Terre': 'Earth', 'Blue': 'Blue' },
                 authors: { multibrot: 'Generalization of the Mandelbrot set', julia3: 'Gaston Julia (1918), degree 3', tree: 'Lindenmayer system (1968)' },
                 rules: {
                     sierpinski: 'Each triangle produces 3 smaller triangles, which can rotate.',
@@ -336,7 +336,7 @@
 
         let type = location.hash.slice(1) in FRACTALS ? location.hash.slice(1) : 'julia';
         let view = { ...FRACTALS[type].view };
-        let palette = 'Neón';
+        let palette = 'Fullcolor';
         let lut = null;
         // T = puntero objetivo, P = puntero suavizado (da la fluidez); y positiva hacia arriba
         const T = { ...FRACTALS[type].init }, P = { ...FRACTALS[type].init };
