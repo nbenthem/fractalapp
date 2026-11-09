@@ -1,0 +1,1104 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Fractal Sound App</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; background: #000; font-family: sans-serif; }
+        canvas { position: absolute; left: 0; top: 0; display: block; width: 100vw; height: 100vh; touch-action: none; }
+        .controls, .info-shell { z-index: 5; }
+        .info-shell {
+            position: absolute; top: 14px; right: 14px; width: min(340px, 75vw);
+            display: flex; flex-direction: column; align-items: flex-end; gap: 6px; pointer-events: none;
+        }
+        .info {
+            width: 100%; max-height: 82vh; overflow-y: auto; box-sizing: border-box;
+            padding: 12px 14px; border-radius: 18px; color: #ddd; pointer-events: none;
+            background: rgba(20, 20, 30, 0.5); backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+            font: 12px/1.5 ui-monospace, Consolas, monospace;
+        }
+        .info h3 {
+            margin: 0 0 2px; font: 600 16px system-ui, sans-serif;
+            background: linear-gradient(135deg, #a98bff, #ff7cc0); -webkit-background-clip: text;
+            background-clip: text; color: transparent;
+        }
+        .info-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .info-actions { display: flex; align-items: center; gap: 6px; flex-shrink: 0; }
+        .info-actions button, .info-bottom button {
+            color: #fff; background: rgba(20,20,30,0.65); border: 1px solid rgba(255,255,255,0.3);
+            cursor: pointer; pointer-events: auto; font: 600 12px system-ui, sans-serif;
+        }
+        .info-actions button:focus-visible, .info-bottom button:focus-visible { outline: 2px solid #fff; }
+        .info-bottom { display: flex; gap: 6px; }
+        .language-button { border-radius: 20px; padding: 5px 8px; }
+        .info-toggle { width: 30px; height: 30px; padding: 0; border-radius: 50%; font-size: 18px !important; }
+        .help-text {
+            position: absolute; z-index: 6; right: 365px; top: 14px; width: min(310px, 75vw);
+            padding: 10px 12px; box-sizing: border-box; border-radius: 12px;
+            color: #fff; background: #222032; border: 1px solid rgba(255,255,255,0.3);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5); font: 12px/1.5 system-ui, sans-serif;
+            pointer-events: none; white-space: pre-line;
+        }
+        .error-message { position: absolute; top: 14px; left: 14px; z-index: 6; color: white; background: #772525; padding: 8px; border-radius: 8px; }
+        @media (max-width: 700px) { .help-text { right: 14px; top: auto; bottom: 110px; } }
+        .info .author { color: #9aa; font-family: system-ui, sans-serif; margin-bottom: 6px; }
+        .info .eq { color: #fff; background: rgba(255,255,255,0.08); padding: 4px 8px; border-radius: 8px; margin: 4px 0; white-space: pre-line; }
+        .info .label { display: block; color: #bed0ed; font: 600 11px system-ui, sans-serif; text-transform: uppercase; letter-spacing: .04em; }
+        .info .explanation { color: #ddd; font: 12px/1.45 system-ui, sans-serif; margin: 6px 0; }
+        .info .row { display: flex; justify-content: space-between; gap: 8px; }
+        .info .row b { color: #9cf; font-weight: normal; }
+        .controls {
+            position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+            display: flex; flex-wrap: wrap; justify-content: center; gap: 8px;
+            max-width: 94vw; padding: 10px; border-radius: 32px;
+            background: rgba(20, 20, 30, 0.45); backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .pad-shell {
+            position: absolute; left: 16px; bottom: 20px; z-index: 5;
+            display: flex; flex-direction: column; align-items: flex-start; gap: 6px;
+        }
+        .pad {
+            display: grid; grid-template-columns: repeat(3, 42px); gap: 6px; padding: 8px; border-radius: 22px;
+            background: rgba(20, 20, 30, 0.45); backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.18); box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .pad[hidden] { display: none; }
+        .pad-toggle {
+            width: 42px; height: 42px; padding: 0; border-radius: 50%; cursor: pointer;
+            color: #fff; font-size: 19px; background: rgba(20,20,30,0.75);
+            border: 1px solid rgba(255,255,255,0.3); box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .pad-toggle:hover, .pad-toggle:focus-visible { background: #6047a0; outline: 2px solid #fff; }
+        .pad button { width: 42px; height: 42px; padding: 0 !important; font-size: 18px !important; }
+        @media (max-width: 860px) { .pad-shell { bottom: 170px; } }
+        .controls button, .pad button {
+            color: #eee; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+            padding: 8px 16px; border-radius: 20px; font-size: 14px; cursor: pointer;
+            transition: background .2s, transform .15s, box-shadow .2s;
+        }
+        .controls button:hover, .pad button:hover { background: rgba(255,255,255,0.22); transform: translateY(-2px); }
+        .controls button.active {
+            background: linear-gradient(135deg, #7b5cff, #ff5ca8); border-color: transparent;
+            color: #fff; box-shadow: 0 0 14px rgba(160, 90, 255, 0.7);
+        }
+        .controls .sep { width: 1px; background: rgba(255,255,255,0.2); margin: 4px 2px; }
+        .controls .dd { position: relative; }
+        .controls .menu {
+            display: none; position: absolute; bottom: calc(100% + 12px); left: 0; min-width: 100%;
+            background: rgba(20, 20, 30, 0.85); backdrop-filter: blur(14px);
+            border: 1px solid rgba(255,255,255,0.18); border-radius: 16px; padding: 6px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+        }
+        .controls .dd.open .menu { display: block; }
+        .controls .menu div {
+            color: #eee; padding: 8px 14px; border-radius: 12px; cursor: pointer;
+            font-size: 14px; white-space: nowrap;
+        }
+        .controls .menu div:hover { background: linear-gradient(135deg, #7b5cff, #ff5ca8); }
+        .orbit-switch { display: flex; align-items: center; gap: 7px; color: #eee; font: 14px system-ui, sans-serif; }
+        .orbit-switch[hidden] { display: none; }
+        .controls .switch {
+            width: 42px; height: 24px; padding: 2px; border-radius: 20px; background: rgba(255,255,255,0.2);
+            display: flex; align-items: center; border: 1px solid rgba(255,255,255,0.3);
+        }
+        .controls .switch[aria-checked="true"] { background: #865ce7; }
+        .controls .switch::after {
+            content: ''; width: 18px; height: 18px; border-radius: 50%; background: white;
+            transition: transform .2s;
+        }
+        .controls .switch[aria-checked="true"]::after { transform: translateX(17px); }
+        .controls .switch:hover { transform: none; }
+        .controls .switch:focus-visible { outline: 2px solid white; }
+    </style>
+</head>
+<body>
+
+    <canvas id="fractalCanvas"></canvas>
+    <canvas id="overlay"></canvas>
+    <div class="error-message" id="errorMessage" role="alert" hidden></div>
+    <div class="info-shell">
+    <div class="info" id="info" tabindex="0">
+        <div class="info-header">
+            <div><h3 id="iName"></h3><div class="author" id="iAuthor"></div></div>
+            <div class="info-actions">
+                <button class="language-button" id="languageToggle" type="button" lang="en">English</button>
+                <button class="info-toggle" id="infoToggle" type="button" aria-controls="infoDetails" aria-expanded="true">−</button>
+            </div>
+        </div>
+        <span class="label" id="iCoordLabel"></span>
+        <div class="row"><span id="iXLabel">x</span><b id="iX">—</b></div>
+        <div class="row"><span id="iYLabel">y</span><b id="iY">—</b></div>
+        <div class="row"><span>zoom</span><b id="iZoom"></b></div>
+        <div id="infoDetails">
+            <div class="eq"><span class="label" id="iEqLabel"></span><span id="iEq"></span></div>
+            <div class="eq"><span class="label" id="iParamLabel"></span><span id="iParam"></span></div>
+            <div class="explanation" id="iExplanation"></div>
+            <div class="explanation" id="iColorHelp"></div>
+            <div id="iOrbit" hidden>
+                <span class="label" id="iOrbitLabel"></span>
+                <div class="explanation" id="iOrbitHelp"></div>
+                <div class="eq" id="iOrbitValues"></div>
+            </div>
+        </div>
+    </div>
+    <div class="info-bottom">
+        <button class="info-toggle" id="helpToggle" type="button" aria-expanded="false" aria-controls="helpText">i</button>
+        <button class="info-toggle" id="muteToggle" type="button" aria-pressed="false"></button>
+    </div>
+    </div>
+    <div class="help-text" id="helpText" hidden></div>
+    <div class="pad-shell">
+        <div class="pad" id="pad" aria-label="Controles de movimiento y zoom">
+            <button data-act="in" title="Acercar (+)" aria-label="Acercar">＋</button>
+            <button data-act="u" title="Arriba (↑)" aria-label="Mover arriba">↑</button>
+            <button data-act="out" title="Alejar (−)" aria-label="Alejar">－</button>
+            <button data-act="l" title="Izquierda (←)" aria-label="Mover a la izquierda">←</button>
+            <button data-act="home" title="Reiniciar vista (0)" aria-label="Reiniciar vista">⌂</button>
+            <button data-act="r" title="Derecha (→)" aria-label="Mover a la derecha">→</button>
+            <span></span>
+            <button data-act="d" title="Abajo (↓)" aria-label="Mover abajo">↓</button>
+        </div>
+        <button class="pad-toggle" id="padToggle" aria-controls="pad" aria-expanded="true" aria-label="Ocultar controles de movimiento" title="Ocultar controles de movimiento">−</button>
+    </div>
+    <div class="controls" id="controls"></div>
+    <div class="orbit-switch" id="orbitSwitch" hidden>
+        <span id="orbitLabel"></span>
+        <button class="switch" id="orbitToggle" type="button" role="switch" aria-checked="true" aria-labelledby="orbitLabel"></button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('fractalCanvas');
+        const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+        const ov = document.getElementById('overlay');
+        const o = ov.getContext('2d');
+        const $ = id => document.getElementById(id);
+        const controls = document.getElementById('controls');
+
+        const DEG = Math.PI / 180;
+        const f4 = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(3);
+        const Z0 = p => `z₀ = ${f4(p.z0x)} ${f4(p.z0y)}i`;
+        // kind 'escape': tiempo de escape (raster); 'vector': curva recursiva.
+        // init: posición inicial del puntero normalizada (x derecha, y arriba, rango -1..1)
+        const FRACTALS = {
+            julia: {
+                name: 'Julia', kind: 'escape', it: 'quad', julia: true, base: 70, init: { x: -0.6, y: 0.22 },
+                view: { x: 0, y: 0, s: 1.5 }, author: 'Gaston Julia (1918) · Pierre Fatou',
+                eq: 'z → z² + c',
+                params: p => `c = ${f4(p.cx)} ${f4(p.cy)}i`
+            },
+            mandelbrot: {
+                name: 'Mandelbrot', kind: 'escape', it: 'quad', base: 70, init: { x: 0, y: 0 },
+                view: { x: -0.6, y: 0, s: 1.4 }, author: 'Benoît Mandelbrot (1980)',
+                eq: 'zₙ₊₁ = zₙ² + c',
+                params: p => Z0(p)
+            },
+            ship: {
+                name: 'Burning Ship', kind: 'escape', it: 'ship', base: 80, init: { x: 0, y: 0 },
+                view: { x: 0, y: 0, s: 2.2 }, author: 'Michael Michelitsch & Otto Rössler (1992)',
+                eq: 'zₙ₊₁ = (|Re(zₙ)| − i|Im(zₙ)|)² + c',
+                params: p => Z0(p)
+            },
+            tricorn: {
+                name: 'Tricorn', kind: 'escape', it: 'tri', base: 70, init: { x: 0, y: 0 },
+                view: { x: -0.2, y: 0, s: 1.6 }, author: 'Crowe, Hasson, Rippon & Strain-Clark (1989) · «Mandelbar»',
+                eq: 'zₙ₊₁ = z̄ₙ² + c',
+                params: p => Z0(p)
+            },
+            multibrot: {
+                name: 'Multibrot', kind: 'escape', it: 'multi', base: 40, init: { x: -0.33, y: 0 },
+                view: { x: 0, y: 0, s: 1.5 }, author: 'Generalización del conjunto de Mandelbrot',
+                eq: 'zₙ₊₁ = zₙ^d + c',
+                params: p => `d = ${p.d.toFixed(2)} · z₀ = ${f4(0)} ${f4(p.z0y)}i`
+            },
+            julia3: {
+                name: 'Julia z³', kind: 'escape', it: 'cubic', julia: true, base: 60, init: { x: 0.2, y: 0.5 },
+                view: { x: 0, y: 0, s: 1.5 }, author: 'Gaston Julia (1918), grado 3',
+                eq: 'z → z³ + c',
+                params: p => `c = ${f4(p.cx)} ${f4(p.cy)}i`
+            },
+            sierpinski: {
+                name: 'Triángulo de Sierpinski', kind: 'vector', init: { x: 0, y: 0 },
+                view: { x: 0, y: 0, s: 1.6 }, author: 'Wacław Sierpiński (1915)',
+                eq: '3 subdivisiones de razón r, cada una girada',
+                params: p => `r = ${p.r.toFixed(3)} · θ = ${(p.tw / DEG).toFixed(1)}°`
+            },
+            koch: {
+                name: 'Copo de nieve de Koch', kind: 'vector', init: { x: 0, y: 0 },
+                view: { x: 0, y: 0, s: 1.6 }, author: 'Helge von Koch (1904)',
+                eq: 'cada lado → 4 lados de razón s = 1 / (2 + 2·cos α)',
+                params: p => `n = ${p.depth.toFixed(2)} · α = ${(p.a / DEG).toFixed(1)}°\n`
+                    + `D = log 4 / log(2+2cos α) = ${(Math.log(4) / Math.log(2 + 2 * Math.cos(p.a))).toFixed(3)}`
+            },
+            dragon: {
+                name: 'Curva del dragón', kind: 'vector', init: { x: 0, y: 0 },
+                view: { x: 0, y: 0, s: 1.6 }, author: 'Heighway, Banks & Harter (NASA, 1966)',
+                eq: 'plegado de papel: giros ±θ según 2ᵏ·m',
+                params: p => `θ = ${(p.ang / DEG).toFixed(1)}°`
+            },
+            tree: {
+                name: 'Árbol fractal', kind: 'vector', init: { x: 0, y: 0 },
+                view: { x: 0, y: 0, s: 1.6 }, author: 'Sistema de Lindenmayer (1968)',
+                eq: 'rama → 2 ramas · ratio ρ, ±α',
+                params: p => `α = ${(p.a / DEG).toFixed(1)}° · ρ = ${p.r.toFixed(3)}`
+            }
+        };
+        const PALETTES = {
+            'Neón':   { a: [0.5, 0.5, 0.5], b: [0.5, 0.5, 0.5], c: [1, 1, 1],   d: [0.0, 0.33, 0.67] },
+            'Fuego':  { a: [0.5, 0.3, 0.2], b: [0.5, 0.4, 0.3], c: [1, 1, 0.5], d: [0.0, 0.1, 0.2] },
+            'Océano': { a: [0.2, 0.5, 0.6], b: [0.3, 0.4, 0.4], c: [1, 1, 1],   d: [0.5, 0.6, 0.7] }
+        };
+        const TEXT = {
+            es: {
+                equation: 'Ecuación', rule: 'Construcción', values: 'Valores actuales', coordinates: 'Coordenadas',
+                real: 'x · parte real', imaginary: 'y · parte imaginaria',
+                showInfo: 'Mostrar información', hideInfo: 'Ocultar información',
+                showPad: 'Mostrar controles de movimiento', hidePad: 'Ocultar controles de movimiento',
+                pad: 'Controles de movimiento y zoom', fractal: 'Fractal', palette: 'Paleta',
+                help: 'Mueve el puntero para transformar la figura y elige un fractal y una paleta en los menús.\n\nDesplázate con las flechas, usa + y − para el zoom y 0 para volver al inicio. El interruptor de órbita muestra los pasos de la ecuación cuando está disponible.\n\nMantén pulsada la imagen para escuchar. Cada fractal tiene su propio matiz: la altura del puntero cambia la nota y su posición horizontal suaviza o ilumina el sonido. Usa el botón de sonido para silenciarlo.',
+                showHelp: 'Mostrar ayuda', hideHelp: 'Ocultar ayuda',
+                mute: 'Silenciar sonido', unmute: 'Activar sonido',
+                orbitSwitch: 'Mostrar órbita',
+                webglError: 'Este navegador no permite mostrar los fractales que necesitan WebGL.',
+                colorHelp: 'Los colores indican cuándo la secuencia se aleja; oscuro significa que no se alejó durante los pasos calculados.',
+                infoScroll: 'Información del fractal. Usa las flechas arriba y abajo para desplazarte.',
+                orbit: 'Órbita', orbitHelp: 'Para el c bajo el puntero: el círculo es el inicio z₀. Cada punto siguiente aplica la ecuación al anterior, sin cambiar c. Mostramos hasta 12 pasos de z sobre la misma escala que la imagen de c.',
+                orbitAway: 'Mueve el puntero sobre la imagen para ver la órbita.',
+                orbitOn: 'Órbita: activada', orbitOff: 'Órbita: desactivada',
+                languageLabel: 'Cambiar idioma a inglés', languageButton: 'English',
+                buttons: { in: 'Acercar', out: 'Alejar', u: 'Mover arriba', d: 'Mover abajo', l: 'Mover a la izquierda', r: 'Mover a la derecha', home: 'Reiniciar vista' },
+                names: { sierpinski: 'Triángulo de Sierpinski', koch: 'Copo de nieve de Koch', dragon: 'Curva del dragón', tree: 'Árbol fractal' },
+                palettes: { 'Neón': 'Neón', 'Fuego': 'Fuego', 'Océano': 'Océano' },
+                authors: { multibrot: 'Generalización del conjunto de Mandelbrot', julia3: 'Gaston Julia (1918), grado 3', tree: 'Sistema de Lindenmayer (1968)' },
+                rules: {
+                    sierpinski: 'Cada triángulo genera 3 triángulos más pequeños, que pueden girar.',
+                    koch: 'Cada lado se sustituye por 4 segmentos que forman un pico.',
+                    dragon: 'Una línea avanza y gira a izquierda o derecha siguiendo un patrón de plegado.',
+                    tree: 'Cada rama genera 2 ramas más cortas.'
+                },
+                explanations: {
+                    julia: 'Cada punto es un inicio z₀. Los ejes x e y del puntero cambian las partes real e imaginaria de c para toda la imagen.',
+                    julia3: 'Como en Julia, cada punto es un inicio z₀ y el puntero cambia c. Aquí se eleva z al cubo en cada paso.',
+                    mandelbrot: 'Cada punto de la imagen representa un valor de c. Los ejes x e y del puntero cambian el inicio z₀ para todos los puntos. En el centro de la pantalla z₀ = 0: es el conjunto de Mandelbrot clásico.',
+                    ship: 'Cada punto representa c. Los ejes x e y del puntero cambian el inicio z₀. En el centro de la pantalla z₀ = 0: es el Burning Ship clásico.',
+                    tricorn: 'Cada punto representa c. Los ejes x e y del puntero cambian el inicio z₀. En el centro de la pantalla z₀ = 0: es el Tricorn clásico. La barra sobre z cambia el signo de su parte imaginaria.',
+                    multibrot: 'Cada punto representa c. El eje x del puntero cambia el exponente d; el eje y cambia la parte imaginaria del inicio z₀. Para exponentes no enteros se usa la rama principal de la potencia compleja.',
+                    sierpinski: 'El eje x cambia el tamaño de las subdivisiones; el eje y las gira. Con r = 0,5 y giro cero aparece el triángulo clásico.',
+                    koch: 'El eje x hace crecer el siguiente nivel de detalle; el eje y cambia el ángulo del pico. Con α = 60° y un nivel entero aparece una etapa del copo clásico. D describe la curva límite.',
+                    dragon: 'El eje x cambia el ángulo de los giros; el eje y gira la figura completa. Con θ = 90° se obtiene la curva clásica.',
+                    tree: 'El eje x abre o cierra las ramas; el eje y cambia su tamaño respecto a la rama anterior.'
+                }
+            },
+            en: {
+                equation: 'Equation', rule: 'Construction', values: 'Current values', coordinates: 'Coordinates',
+                real: 'x · real part', imaginary: 'y · imaginary part',
+                showInfo: 'Show information', hideInfo: 'Hide information',
+                showPad: 'Show movement controls', hidePad: 'Hide movement controls',
+                pad: 'Movement and zoom controls', fractal: 'Fractal', palette: 'Palette',
+                help: 'Move the pointer to transform the shape, and choose a fractal and palette from the menus.\n\nUse the arrows to move, + and − to zoom, and 0 to return to the starting view. When available, the orbit switch shows the steps of the equation.\n\nHold down on the image to listen. Each fractal has its own sound: pointer height changes the note, while moving left or right softens or brightens it. Use the sound button to mute it.',
+                showHelp: 'Show help', hideHelp: 'Hide help',
+                mute: 'Mute sound', unmute: 'Unmute sound',
+                orbitSwitch: 'Show orbit',
+                webglError: 'This browser cannot display fractals that require WebGL.',
+                colorHelp: 'Colors indicate how quickly the sequence escapes; dark means it did not escape within the calculated steps.',
+                infoScroll: 'Fractal information. Use the up and down arrow keys to scroll.',
+                orbit: 'Orbit', orbitHelp: 'For the c under the pointer: the circle is the starting value z₀. Each next point applies the equation to the previous one, keeping c fixed. Up to 12 z steps are shown on the same scale as the image of c.',
+                orbitAway: 'Move the pointer over the image to see the orbit.',
+                orbitOn: 'Orbit: on', orbitOff: 'Orbit: off',
+                languageLabel: 'Change language to Spanish', languageButton: 'Español',
+                buttons: { in: 'Zoom in', out: 'Zoom out', u: 'Move up', d: 'Move down', l: 'Move left', r: 'Move right', home: 'Reset view' },
+                names: { sierpinski: 'Sierpiński triangle', koch: 'Koch snowflake', dragon: 'Dragon curve', tree: 'Fractal tree' },
+                palettes: { 'Neón': 'Neon', 'Fuego': 'Fire', 'Océano': 'Ocean' },
+                authors: { multibrot: 'Generalization of the Mandelbrot set', julia3: 'Gaston Julia (1918), degree 3', tree: 'Lindenmayer system (1968)' },
+                rules: {
+                    sierpinski: 'Each triangle produces 3 smaller triangles, which can rotate.',
+                    koch: 'Replace each side with 4 segments forming a peak.',
+                    dragon: 'A line advances and turns left or right in a paper-folding pattern.',
+                    tree: 'Each branch produces 2 shorter branches.'
+                },
+                explanations: {
+                    julia: 'Each point is a starting value z₀. The pointer’s x and y axes change the real and imaginary parts of c for the whole image.',
+                    julia3: 'As in Julia, each point is a starting value z₀ and the pointer changes c. Here z is cubed at each step.',
+                    mandelbrot: 'Each point represents a value of c. The pointer’s x and y axes change the starting value z₀ for every point. At the screen centre, z₀ = 0: this is the classic Mandelbrot set.',
+                    ship: 'Each point represents c. The pointer’s x and y axes change the starting value z₀. At the screen centre, z₀ = 0: this is the classic Burning Ship.',
+                    tricorn: 'Each point represents c. The pointer’s x and y axes change the starting value z₀. At the screen centre, z₀ = 0: this is the classic Tricorn. The bar over z reverses the sign of its imaginary part.',
+                    multibrot: 'Each point represents c. The pointer’s x axis changes exponent d; its y axis changes the imaginary part of the starting value z₀. Non-integer powers use the principal branch.',
+                    sierpinski: 'The x axis changes the size of the subdivisions; the y axis rotates them. At r = 0.5 and zero rotation, this is the classic triangle.',
+                    koch: 'The x axis grows the next level of detail; the y axis changes the peak angle. At α = 60° and a whole-number level, this is a stage of the classic snowflake. D describes the limiting curve.',
+                    dragon: 'The x axis changes the turning angle; the y axis rotates the whole figure. At θ = 90°, this is the classic curve.',
+                    tree: 'The x axis opens or closes the branches; the y axis changes their size relative to the parent branch.'
+                }
+            }
+        };
+        let language = 'es';
+
+        let type = location.hash.slice(1) in FRACTALS ? location.hash.slice(1) : 'julia';
+        let view = { ...FRACTALS[type].view };
+        let palette = 'Neón';
+        let lut = null;
+        // T = puntero objetivo, P = puntero suavizado (da la fluidez); y positiva hacia arriba
+        const T = { ...FRACTALS[type].init }, P = { ...FRACTALS[type].init };
+        let prm = {};
+        let tv = { ...view }; // vista objetivo; `view` la persigue con suavidad
+        function buildLut() {
+            const p = PALETTES[palette];
+            lut = new Uint8ClampedArray(1024 * 3);
+            for (let i = 0; i < 1024; i++) {
+                const t = i / 1024;
+                for (let k = 0; k < 3; k++) {
+                    const v = p.a[k] + p.b[k] * Math.cos(6.28318 * (p.c[k] * t + p.d[k]));
+                    lut[i * 3 + k] = v * 255;
+                }
+            }
+        }
+        buildLut();
+
+        let W = innerWidth, H = innerHeight;
+        function resize() {
+            W = innerWidth; H = innerHeight;
+            const dpr = Math.min(devicePixelRatio || 1, 2);
+            ov.width = W * dpr; ov.height = H * dpr;
+            o.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        window.addEventListener('resize', resize);
+
+        const BAIL = 1e4;
+        const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+        // La misma iteración que el shader, para el sonido y la órbita visible.
+        function iterate(zx, zy, cx, cy) {
+            switch (FRACTALS[type].it) {
+                case 'cubic':
+                    return [zx * zx * zx - 3 * zx * zy * zy + cx,
+                            3 * zx * zx * zy - zy * zy * zy + cy];
+                case 'tri':
+                    return [zx * zx - zy * zy + cx, -2 * zx * zy + cy];
+                case 'ship': {
+                    const ax = Math.abs(zx), ay = Math.abs(zy);
+                    return [ax * ax - ay * ay + cx, -2 * ax * ay + cy];
+                }
+                case 'multi': {
+                    const r2 = zx * zx + zy * zy;
+                    if (r2 < 1e-18) return [cx, cy];
+                    const r = Math.pow(r2, prm.d / 2), angle = prm.d * Math.atan2(zy, zx);
+                    return [r * Math.cos(angle) + cx, r * Math.sin(angle) + cy];
+                }
+                default:
+                    return [zx * zx - zy * zy + cx, 2 * zx * zy + cy];
+            }
+        }
+
+        function maxIter() {
+            const f = FRACTALS[type];
+            return Math.min(900, Math.round(f.base + 40 * Math.max(0, Math.log2(f.view.s / view.s))));
+        }
+
+        // Pasa de píxel de pantalla (px CSS) a coordenadas del mundo (y hacia arriba)
+        function toWorld(px, py, v = view) {
+            return [v.x + (px / W * 2 - 1) * v.s * (W / H),
+                    v.y - (py / H * 2 - 1) * v.s];
+        }
+
+        // ---------- WebGL: el fractal de escape se calcula por píxel en la GPU ----------
+        const IT_ID = { quad: 0, ship: 1, tri: 2, multi: 3, cubic: 4 };
+        const VS = 'attribute vec2 a; void main(){ gl_Position = vec4(a, 0.0, 1.0); }';
+        const FS = `
+            precision highp float;
+            uniform vec2 uRes, uCenter, uZ0, uC;
+            uniform float uScale, uD;
+            uniform int uType, uJulia, uMax;
+            uniform vec3 pa, pb, pc, pd;
+            void main() {
+                vec2 p = gl_FragCoord.xy / uRes * 2.0 - 1.0;
+                vec2 w = uCenter + vec2(p.x * uRes.x / uRes.y, p.y) * uScale;
+                vec2 z = uJulia == 1 ? w : uZ0;
+                vec2 c = uJulia == 1 ? uC : w;
+                float r2 = 0.0, n = 0.0;
+                bool inside = true;
+                for (int i = 0; i < 1000; i++) {
+                    if (i >= uMax) break;
+                    r2 = dot(z, z);
+                    if (r2 > 1e4) { inside = false; break; }
+                    vec2 nz;
+                    if (uType == 1) { vec2 q = abs(z); nz = vec2(q.x*q.x - q.y*q.y, -2.0*q.x*q.y) + c; }
+                    else if (uType == 2) { nz = vec2(z.x*z.x - z.y*z.y, -2.0*z.x*z.y) + c; }
+                    else if (uType == 3) {
+                        if (r2 < 1e-18) nz = c;
+                        else { float r = pow(r2, uD * 0.5), th = uD * atan(z.y, z.x); nz = vec2(r*cos(th), r*sin(th)) + c; }
+                    }
+                    else if (uType == 4) { nz = vec2(z.x*z.x*z.x - 3.0*z.x*z.y*z.y, 3.0*z.x*z.x*z.y - z.y*z.y*z.y) + c; }
+                    else { nz = vec2(z.x*z.x - z.y*z.y, 2.0*z.x*z.y) + c; }
+                    z = nz; n += 1.0;
+                }
+                if (inside) { gl_FragColor = vec4(0.02, 0.02, 0.06, 1.0); return; }
+                float deg = uType == 4 ? 3.0 : (uType == 3 ? uD : 2.0);
+                float v = n + 1.0 - log(log(r2) / 2.0) / log(deg);
+                float t = sqrt(max(v, 0.0)) * 0.22;
+                gl_FragColor = vec4(pa + pb * cos(6.28318 * (pc * t + pd)), 1.0);
+            }`;
+        let U = {};
+        if (gl) {
+            const mk = (t, src) => {
+                const s = gl.createShader(t);
+                gl.shaderSource(s, src); gl.compileShader(s);
+                if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) console.error(gl.getShaderInfoLog(s));
+                return s;
+            };
+            const prog = gl.createProgram();
+            gl.attachShader(prog, mk(gl.VERTEX_SHADER, VS));
+            gl.attachShader(prog, mk(gl.FRAGMENT_SHADER, FS));
+            gl.linkProgram(prog); gl.useProgram(prog);
+            gl.bindBuffer(gl.ARRAY_BUFFER, gl.createBuffer());
+            gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+            const loc = gl.getAttribLocation(prog, 'a');
+            gl.enableVertexAttribArray(loc);
+            gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+            for (const n of ['uRes', 'uCenter', 'uZ0', 'uC', 'uScale', 'uD', 'uType', 'uJulia', 'uMax',
+                             'pa', 'pb', 'pc', 'pd']) U[n] = gl.getUniformLocation(prog, n);
+        }
+
+        let lastEscapeKey = '';
+        function renderEscape() {
+            const dpr = Math.min(devicePixelRatio || 1, 1.5);
+            const w = Math.round(W * dpr), h = Math.round(H * dpr);
+            const resized = canvas.width !== w || canvas.height !== h;
+            if (resized) { canvas.width = w; canvas.height = h; }
+            const f = FRACTALS[type], p = PALETTES[palette];
+            const key = [w, h, type, palette, maxIter(), view.x, view.y, view.s, prm.z0x, prm.z0y, prm.cx, prm.cy, prm.d]
+                .map(v => typeof v === 'number' ? Math.fround(v) : v).join(',');
+            if (!resized && key === lastEscapeKey) return;
+            lastEscapeKey = key;
+            gl.viewport(0, 0, w, h);
+            gl.uniform2f(U.uRes, w, h);
+            gl.uniform2f(U.uCenter, view.x, view.y);
+            gl.uniform1f(U.uScale, view.s);
+            gl.uniform2f(U.uZ0, prm.z0x, prm.z0y);
+            gl.uniform2f(U.uC, prm.cx, prm.cy);
+            gl.uniform1f(U.uD, prm.d);
+            gl.uniform1i(U.uType, IT_ID[f.it]);
+            gl.uniform1i(U.uJulia, f.julia ? 1 : 0);
+            gl.uniform1i(U.uMax, maxIter());
+            gl.uniform3fv(U.pa, p.a); gl.uniform3fv(U.pb, p.b); gl.uniform3fv(U.pc, p.c); gl.uniform3fv(U.pd, p.d);
+            gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+        }
+
+        // ---------- Audio ----------
+        let audioCtx = null, oscillator = null, osc2 = null, osc3 = null, overtoneGain = null, harmonyGain = null, gainNode = null, muted = false;
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                oscillator = audioCtx.createOscillator();
+                osc2 = audioCtx.createOscillator();
+                osc3 = audioCtx.createOscillator();
+                gainNode = audioCtx.createGain();
+                const filter = audioCtx.createBiquadFilter();
+                overtoneGain = audioCtx.createGain();
+                harmonyGain = audioCtx.createGain();
+                filter.type = 'lowpass';
+                filter.frequency.value = 1500;
+                oscillator.type = 'sine';
+                osc2.type = 'sine';
+                osc3.type = 'sine';
+                oscillator.frequency.value = 196;
+                osc2.frequency.value = 392;
+                osc3.frequency.value = 294;
+                overtoneGain.gain.value = 0.06;
+                harmonyGain.gain.value = 0.08;
+                gainNode.gain.value = 0;
+                oscillator.connect(gainNode);
+                osc2.connect(overtoneGain); overtoneGain.connect(gainNode);
+                osc3.connect(harmonyGain); harmonyGain.connect(gainNode);
+                gainNode.connect(filter);
+                filter.connect(audioCtx.destination);
+                oscillator.start(); osc2.start(); osc3.start();
+            }
+            // Los navegadores suspenden el audio hasta un gesto del usuario
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        const NOTES = [0, 2, 4, 7, 9, 12, 14, 16, 19, 21].map(s => 196 * Math.pow(2, s / 12));
+        const SOUND_PROFILES = {
+            julia:      { shift: 0,  harmony: 1.5,  blend: 0.08 },
+            mandelbrot: { shift: -2, harmony: 1.5,  blend: 0.13 },
+            ship:       { shift: -3, harmony: 1.25, blend: 0.12 },
+            tricorn:    { shift: 1,  harmony: 1.25, blend: 0.13 },
+            multibrot:  { shift: -1, harmony: 2,    blend: 0.08 },
+            julia3:     { shift: 2,  harmony: 1.5,  blend: 0.11 },
+            sierpinski: { shift: 0,  harmony: 1.25, blend: 0.14 },
+            koch:       { shift: 2,  harmony: 2,    blend: 0.07 },
+            dragon:     { shift: -1, harmony: 1.5,  blend: 0.11 },
+            tree:       { shift: -3, harmony: 1.5,  blend: 0.10 }
+        };
+
+        function setSound(position, brightness) {
+            if (!audioCtx) return;
+            const idx = Math.round(clamp(position, 0, 1) * (NOTES.length - 1));
+            const t = audioCtx.currentTime;
+            const profile = SOUND_PROFILES[type];
+            const fq = NOTES[idx] * Math.pow(2, profile.shift / 12);
+            oscillator.frequency.setTargetAtTime(fq, t, 0.2);
+            osc2.frequency.setTargetAtTime(fq * 2, t, 0.2);
+            osc3.frequency.setTargetAtTime(fq * profile.harmony, t, 0.2);
+            overtoneGain.gain.setTargetAtTime(0.03 + clamp(brightness, 0, 1) * 0.22, t, 0.2);
+            harmonyGain.gain.setTargetAtTime(profile.blend, t, 0.2);
+            gainNode.gain.setTargetAtTime(0.09, t, 0.12);
+        }
+
+        function silence(fade = 0.15) {
+            if (gainNode) gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, fade);
+        }
+
+        // ---------- Vectoriales ----------
+        // Color de la paleta (t en 0..1, cíclico)
+        function col(t, a) {
+            const i = (Math.floor((((t % 1) + 1) % 1) * 1024) & 1023) * 3;
+            return `rgba(${lut[i]},${lut[i + 1]},${lut[i + 2]},${a})`;
+        }
+        const vx = () => W / 2 / (view.s * (W / H)), vy = () => H / 2 / view.s;
+        // Mundo → pantalla teniendo en cuenta desplazamiento y zoom de la vista
+        const SX = x => W / 2 + (x - view.x) * vx(), SY = y => H / 2 - (y - view.y) * vy();
+
+        function drawSierpinski() {
+            const r = 0.5 + P.x * 0.2, tw = P.y * 0.45, D = 7, total = Math.pow(3, D);
+            prm.r = r; prm.tw = tw;
+            const X = SX, Y = SY;
+            const v = [0, 1, 2].map(i => {
+                const a = Math.PI / 2 + i * 2 * Math.PI / 3;
+                return [1.4 * Math.cos(a), 1.4 * Math.sin(a)];
+            });
+            let leaf = 0;
+            const cs = Math.cos(tw), sn = Math.sin(tw);
+            (function rec(tri, d) {
+                if (d === 0) {
+                    o.fillStyle = col(leaf++ / total, 0.85);
+                    o.beginPath();
+                    o.moveTo(X(tri[0][0]), Y(tri[0][1]));
+                    o.lineTo(X(tri[1][0]), Y(tri[1][1]));
+                    o.lineTo(X(tri[2][0]), Y(tri[2][1]));
+                    o.fill();
+                    return;
+                }
+                for (let i = 0; i < 3; i++) {
+                    const p = tri[i], q = tri[(i + 1) % 3], s = tri[(i + 2) % 3];
+                    const c = [p, [p[0] + r * (q[0] - p[0]), p[1] + r * (q[1] - p[1])],
+                                  [p[0] + r * (s[0] - p[0]), p[1] + r * (s[1] - p[1])]];
+                    const gx = (c[0][0] + c[1][0] + c[2][0]) / 3, gy = (c[0][1] + c[1][1] + c[2][1]) / 3;
+                    rec(c.map(([x, y]) => [gx + (x - gx) * cs - (y - gy) * sn, gy + (x - gx) * sn + (y - gy) * cs]), d - 1);
+                }
+            })(v, D);
+        }
+
+        // Koch generalizado: cada segmento se reemplaza por 4 de razón s = 1/(2+2cos α).
+        // x del puntero = nº de iteraciones (continuo: el último nivel "crece" desde la recta),
+        // y del puntero = ángulo α (α=0 recta, D=1 · α=60° copo clásico, D≈1.262 · α→90°, D→2)
+        function drawKoch() {
+            const depth = (P.x + 1) / 2 * 6;
+            const a = (P.y >= 0 ? 60 + 25 * P.y : 60 * (1 + P.y)) * DEG;
+            const lv = Math.floor(depth), fr = depth - lv;
+            prm.depth = depth; prm.a = a;
+            let pts = [];
+            for (let i = 0; i < 3; i++) {
+                const t = Math.PI / 2 + i * 2 * Math.PI / 3;
+                pts.push(1.3 * Math.cos(t), 1.3 * Math.sin(t));
+            }
+            // El triángulo va en sentido antihorario: el exterior queda a la derecha de cada lado
+            const refine = (src, ang) => {
+                const s = 1 / (2 + 2 * Math.cos(ang)), c = Math.cos(ang), sn = Math.sin(ang);
+                const n = src.length / 2, out = [];
+                for (let j = 0; j < n; j++) {
+                    const ax = src[2 * j], ay = src[2 * j + 1];
+                    const dx = src[2 * ((j + 1) % n)] - ax, dy = src[2 * ((j + 1) % n) + 1] - ay;
+                    const p1x = ax + s * dx, p1y = ay + s * dy;
+                    const p2x = p1x + s * (dx * c + dy * sn), p2y = p1y + s * (-dx * sn + dy * c);
+                    const p3x = p2x + s * (dx * c - dy * sn), p3y = p2y + s * (dx * sn + dy * c);
+                    out.push(ax, ay, p1x, p1y, p2x, p2y, p3x, p3y);
+                }
+                return out;
+            };
+            for (let d = 0; d < lv; d++) pts = refine(pts, a);
+            if (fr > 1e-3) pts = refine(pts, a * fr);
+            const n = pts.length / 2;
+            const X = i => SX(pts[2 * (i % n)]), Y = i => SY(pts[2 * (i % n) + 1]);
+            o.beginPath();
+            for (let i = 0; i < n; i++) i ? o.lineTo(X(i), Y(i)) : o.moveTo(X(i), Y(i));
+            o.closePath();
+            o.fillStyle = col(0.18, 0.38); o.fill();
+            o.lineWidth = 1.4; o.lineJoin = 'round';
+            const chunk = 64;
+            for (let i = 0; i < n; i += chunk) {
+                o.strokeStyle = col(i / n, 0.95);
+                o.beginPath(); o.moveTo(X(i), Y(i));
+                for (let j = 1; j <= chunk; j++) o.lineTo(X(i + j), Y(i + j));
+                o.stroke();
+            }
+        }
+
+        // Giros de la curva del dragón: izquierda si m mod 4 = 1 (i = 2ᵏ·m, m impar)
+        const DRAGON_N = 12;
+        const dragonTurns = new Int8Array((1 << DRAGON_N) - 1).map((_, i) => {
+            let m = i + 1;
+            while (!(m & 1)) m >>= 1;
+            return (m & 3) === 1 ? 1 : -1;
+        });
+
+        function drawDragon() {
+            const ang = (90 + P.x * 35) * DEG;
+            prm.ang = ang;
+            let h = P.y * Math.PI, x = 0, y = 0;
+            const n = dragonTurns.length + 1, pts = new Float64Array(2 * (n + 1));
+            let x0 = 0, x1 = 0, y0 = 0, y1 = 0;
+            for (let i = 0; i < n; i++) {
+                if (i > 0) h += dragonTurns[i - 1] * ang;
+                x += Math.cos(h); y += Math.sin(h);
+                pts[2 * (i + 1)] = x; pts[2 * (i + 1) + 1] = y;
+                if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y;
+            }
+            // Se ajusta al encuadre inicial para que la figura "respire" al deformarse
+            const S0 = FRACTALS.dragon.view.s;
+            const sc = Math.min(2 * S0 * (W / H) * 0.85 / Math.max(x1 - x0, 1e-6),
+                                2 * S0 * 0.8 / Math.max(y1 - y0, 1e-6));
+            const cx = (x0 + x1) / 2, cy = (y0 + y1) / 2;
+            const X = i => SX((pts[2 * i] - cx) * sc), Y = i => SY((pts[2 * i + 1] - cy) * sc);
+            o.lineWidth = 1.2; o.lineJoin = 'round';
+            for (let i = 0; i < n; i += 48) {
+                o.strokeStyle = col(i / n, 0.95);
+                o.beginPath(); o.moveTo(X(i), Y(i));
+                for (let j = 1; j <= 48 && i + j <= n; j++) o.lineTo(X(i + j), Y(i + j));
+                o.stroke();
+            }
+        }
+
+        function drawTree() {
+            const a = (30 + P.x * 22) * DEG, r = 0.70 + P.y * 0.06, D = 10;
+            prm.a = a; prm.r = r;
+            o.lineCap = 'round';
+            (function br(x, y, ang, len, d) {
+                const x2 = x + len * Math.cos(ang), y2 = y + len * Math.sin(ang);
+                o.strokeStyle = col((D - d) / D * 0.6, 0.95);
+                o.lineWidth = d * 0.8 + 0.6;
+                o.beginPath();
+                o.moveTo(SX(x), SY(y));
+                o.lineTo(SX(x2), SY(y2));
+                o.stroke();
+                if (d > 0) {
+                    br(x2, y2, ang - a, len * r, d - 1);
+                    br(x2, y2, ang + a, len * r, d - 1);
+                }
+            })(0, -1.5, Math.PI / 2, 0.6, D);
+        }
+
+        // ---------- Ejes y cursor ----------
+        function niceStep(raw) {
+            const p = Math.pow(10, Math.floor(Math.log10(raw))), m = raw / p;
+            return (m < 1.5 ? 1 : m < 3.5 ? 2 : m < 7.5 ? 5 : 10) * p;
+        }
+
+        function drawAxes(ptr) {
+            const asp = W / H, kx = vx(), ky = vy();
+            const X = x => W / 2 + (x - view.x) * kx, Y = y => H / 2 - (y - view.y) * ky;
+            const step = niceStep(view.s * asp * 2 / 8);
+            const dec = Math.max(0, -Math.floor(Math.log10(step)));
+            const ax = clamp(X(0), 34, W - 8), ay = clamp(Y(0), 16, H - 100);
+            o.save();
+            o.strokeStyle = 'rgba(255,255,255,0.35)'; o.fillStyle = 'rgba(255,255,255,0.65)';
+            o.lineWidth = 1; o.font = '10px ui-monospace, Consolas, monospace';
+            o.beginPath(); o.moveTo(0, ay); o.lineTo(W, ay); o.moveTo(ax, 0); o.lineTo(ax, H); o.stroke();
+            o.textAlign = 'center';
+            const x0 = Math.ceil((view.x - view.s * asp) / step), x1 = Math.floor((view.x + view.s * asp) / step);
+            for (let i = x0; i <= x1 && i - x0 < 60; i++) {
+                if (i === 0) continue;
+                const sx = X(i * step);
+                o.beginPath(); o.moveTo(sx, ay - 4); o.lineTo(sx, ay + 4); o.stroke();
+                o.fillText((i * step).toFixed(dec), sx, ay + 16);
+            }
+            o.textAlign = ax > W - 60 ? 'right' : 'left';
+            const y0 = Math.ceil((view.y - view.s) / step), y1 = Math.floor((view.y + view.s) / step);
+            for (let i = y0; i <= y1 && i - y0 < 60; i++) {
+                const sy = Y(i * step);
+                o.beginPath(); o.moveTo(ax - 4, sy); o.lineTo(ax + 4, sy); o.stroke();
+                o.fillText((i * step).toFixed(dec), ax + (o.textAlign === 'right' ? -8 : 8), sy + 3);
+            }
+            if (ptr) {
+                o.setLineDash([4, 4]); o.strokeStyle = 'rgba(255,255,255,0.5)';
+                o.beginPath();
+                o.moveTo(ptr.px, ay); o.lineTo(ptr.px, ptr.py); o.lineTo(ax, ptr.py);
+                o.stroke(); o.setLineDash([]);
+                o.strokeStyle = '#fff'; o.beginPath(); o.arc(ptr.px, ptr.py, 6, 0, 6.2832); o.stroke();
+            }
+            o.restore();
+        }
+
+        function drawOrbit(point) {
+            const { x: cx, y: cy } = point;
+            let zx = prm.z0x, zy = prm.z0y;
+            o.save();
+            o.strokeStyle = 'rgba(255,255,255,0.85)';
+            o.fillStyle = '#ffe47a';
+            o.lineWidth = 1.5;
+            o.shadowColor = '#000';
+            o.shadowBlur = 4;
+            o.beginPath();
+            o.moveTo(SX(zx), SY(zy));
+            const points = [[zx, zy]];
+            for (let i = 0; i < 12; i++) {
+                if (zx * zx + zy * zy > BAIL) break;
+                [zx, zy] = iterate(zx, zy, cx, cy);
+                points.push([zx, zy]);
+                o.lineTo(SX(zx), SY(zy));
+                if (zx * zx + zy * zy > BAIL) break;
+            }
+            o.stroke();
+            for (const [x, y] of points.slice(1)) {
+                o.beginPath();
+                o.arc(SX(x), SY(y), 3, 0, Math.PI * 2);
+                o.fill();
+            }
+            o.strokeStyle = '#ffe47a';
+            o.beginPath();
+            o.arc(SX(points[0][0]), SY(points[0][1]), 6, 0, Math.PI * 2);
+            o.stroke();
+            o.font = '12px system-ui, sans-serif';
+            o.fillText('z₀', SX(points[0][0]) + 8, SY(points[0][1]) - 8);
+            o.restore();
+            const first = points[1];
+            $('iOrbitValues').textContent = `c = ${f4(cx)} ${f4(cy)}i`
+                + (first ? `\nz₁ = ${f4(first[0])} ${f4(first[1])}i` : '');
+        }
+
+        // ---------- Interacción ----------
+        let pressed = false, inside = false;
+        const ptr = { px: 0, py: 0 };
+        let orbitEnabled = true;
+
+        function selectedPoint() {
+            if (!inside) return null;
+            const [x, y] = toWorld(ptr.px, ptr.py);
+            return { x, y };
+        }
+
+        function updateOrbitControl() {
+            const text = TEXT[language];
+            $('orbitLabel').textContent = text.orbitSwitch;
+            $('orbitToggle').setAttribute('aria-checked', String(orbitEnabled));
+            $('iOrbit').hidden = !orbitEnabled || !['mandelbrot', 'ship', 'tricorn'].includes(type);
+        }
+
+        $('orbitToggle').addEventListener('click', () => {
+            orbitEnabled = !orbitEnabled;
+            updateOrbitControl();
+        });
+
+        function setPointer(e) {
+            ptr.px = e.clientX; ptr.py = e.clientY;
+            T.x = clamp(e.clientX / W * 2 - 1, -1, 1);
+            T.y = clamp(-(e.clientY / H * 2 - 1), -1, 1);
+            inside = true;
+        }
+
+        function currentSound() {
+            if (!audioCtx || !pressed || muted) return;
+            setSound((P.y + 1) / 2, (P.x + 1) / 2);
+        }
+
+        ov.addEventListener('pointerdown', e => {
+            if (!muted) initAudio();
+            pressed = true;
+            ov.setPointerCapture(e.pointerId);
+            setPointer(e);
+        });
+        ov.addEventListener('pointermove', setPointer);
+        ov.addEventListener('pointerleave', () => {
+            if (!pressed) {
+                inside = false;
+                $('iX').textContent = '—';
+                $('iY').textContent = '—';
+            }
+        });
+
+        function end() { pressed = false; silence(); }
+        ov.addEventListener('pointerup', end);
+        ov.addEventListener('pointercancel', end);
+
+        // Cámara: `tv` es el destino y `view` lo alcanza con suavidad exponencial
+        const minScale = () => FRACTALS[type].kind === 'escape' ? 5e-5 : 0.15; // límite de precisión float32
+        function clampTv() {
+            tv.s = clamp(tv.s, minScale(), 4);
+            tv.x = clamp(tv.x, -3, 3); tv.y = clamp(tv.y, -3, 3);
+        }
+
+        // Zoom manteniendo fijo el punto del mundo bajo el puntero
+        function zoomAt(px, py, factor) {
+            const s = clamp(tv.s * factor, minScale(), 4);
+            factor = s / tv.s;
+            const [mx, my] = toWorld(px, py, tv);
+            tv.x = mx - (mx - tv.x) * factor;
+            tv.y = my - (my - tv.y) * factor;
+            tv.s = s;
+            clampTv();
+        }
+
+        ov.addEventListener('wheel', e => {
+            e.preventDefault();
+            zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 0.8 : 1.25);
+        }, { passive: false });
+        ov.addEventListener('dblclick', () => { tv = { ...FRACTALS[type].view }; });
+
+        // Botones y teclado: un toque da un paso; mantener pulsado mueve de forma continua
+        const held = new Set();
+        const pad = $('pad'), padToggle = $('padToggle');
+        function updateToggle(button, expanded, showLabel, hideLabel, collapsedSymbol) {
+            button.setAttribute('aria-expanded', String(expanded));
+            const label = expanded ? hideLabel : showLabel;
+            button.setAttribute('aria-label', label);
+            button.title = label;
+            button.textContent = expanded ? '−' : collapsedSymbol;
+        }
+        padToggle.addEventListener('click', () => {
+            const collapsed = !pad.hidden;
+            pad.hidden = collapsed;
+            updateToggle(padToggle, !collapsed, TEXT[language].showPad, TEXT[language].hidePad, '✥');
+        });
+        function updateMuteControl() {
+            const button = $('muteToggle'), label = muted ? TEXT[language].unmute : TEXT[language].mute;
+            button.setAttribute('aria-label', label);
+            button.setAttribute('aria-pressed', String(muted));
+            button.title = label;
+            button.textContent = muted ? '🔇' : '🔊';
+        }
+        $('muteToggle').addEventListener('click', () => {
+            muted = !muted;
+            if (muted) silence(0.01);
+            else if (pressed) { initAudio(); currentSound(); }
+            updateMuteControl();
+        });
+        function setHelpOpen(open) {
+            $('helpText').hidden = !open;
+            $('helpToggle').setAttribute('aria-expanded', String(open));
+            const label = open ? TEXT[language].hideHelp : TEXT[language].showHelp;
+            $('helpToggle').setAttribute('aria-label', label);
+            $('helpToggle').title = label;
+        }
+        $('helpToggle').addEventListener('click', () => setHelpOpen($('helpText').hidden));
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#helpToggle') && !e.target.closest('#helpText')) setHelpOpen(false);
+        });
+        document.addEventListener('keydown', e => {
+            if (e.key === 'Escape' && !$('helpText').hidden) {
+                setHelpOpen(false);
+                $('helpToggle').focus();
+            }
+        });
+        const infoDetails = $('infoDetails'), infoToggle = $('infoToggle');
+        infoToggle.addEventListener('click', () => {
+            infoDetails.hidden = !infoDetails.hidden;
+            $('languageToggle').hidden = infoDetails.hidden;
+            updateToggle(infoToggle, !infoDetails.hidden, TEXT[language].showInfo, TEXT[language].hideInfo, '+');
+        });
+        function nudge(act) {
+            const a = W / H;
+            if (act === 'l') tv.x -= tv.s * a * 0.5;
+            if (act === 'r') tv.x += tv.s * a * 0.5;
+            if (act === 'u') tv.y += tv.s * 0.5;
+            if (act === 'd') tv.y -= tv.s * 0.5;
+            if (act === 'in') tv.s *= 0.6;
+            if (act === 'out') tv.s /= 0.6;
+            if (act === 'home') tv = { ...FRACTALS[type].view };
+            clampTv();
+        }
+        function stepCamera(dt) {
+            const sp = tv.s * dt * 1.1;
+            if (held.has('l')) tv.x -= sp * (W / H);
+            if (held.has('r')) tv.x += sp * (W / H);
+            if (held.has('u')) tv.y += sp;
+            if (held.has('d')) tv.y -= sp;
+            if (held.has('in')) tv.s *= Math.exp(-dt * 1.3);
+            if (held.has('out')) tv.s *= Math.exp(dt * 1.3);
+            clampTv();
+            const k = 1 - Math.exp(-dt * 10);
+            view.x += (tv.x - view.x) * k;
+            view.y += (tv.y - view.y) * k;
+            view.s *= Math.pow(tv.s / view.s, k);
+        }
+        for (const b of pad.querySelectorAll('button')) {
+            const act = b.dataset.act;
+            let timer = 0;
+            const stop = () => { clearTimeout(timer); held.delete(act); };
+            b.addEventListener('pointerdown', () => {
+                nudge(act);
+                if (act !== 'home') timer = setTimeout(() => held.add(act), 280);
+            });
+            for (const ev of ['pointerup', 'pointerleave', 'pointercancel']) b.addEventListener(ev, stop);
+            b.addEventListener('click', e => { if (e.detail === 0) nudge(act); });
+        }
+        const KEYS = { ArrowLeft: 'l', ArrowRight: 'r', ArrowUp: 'u', ArrowDown: 'd',
+                       '+': 'in', '=': 'in', '-': 'out', '_': 'out' };
+        addEventListener('keydown', e => {
+            if (e.target === $('info') && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
+                e.preventDefault();
+                $('info').scrollTop += e.key === 'ArrowDown' ? 40 : -40;
+                return;
+            }
+            if (e.key === '0') return nudge('home');
+            const act = KEYS[e.key];
+            if (!act) return;
+            e.preventDefault();
+            if (!held.has(act)) nudge(act);
+            held.add(act);
+        });
+        addEventListener('keyup', e => held.delete(KEYS[e.key]));
+
+        // Parámetros matemáticos derivados del puntero suavizado
+        function computeParams() {
+            const f = FRACTALS[type];
+            prm = { cx: 0, cy: 0, z0x: 0, z0y: 0, d: f.it === 'cubic' ? 3 : 2 };
+            if (f.julia) { prm.cx = P.x * 1.2; prm.cy = P.y * 1.2; }
+            else if (type === 'multibrot') { prm.d = 2 + (P.x + 1) * 1.5; prm.z0y = P.y * 0.5; }
+            else if (f.kind === 'escape') { prm.z0x = P.x * 0.75; prm.z0y = P.y * 0.75; }
+        }
+
+        // ---------- Bucle principal ----------
+        let last = performance.now();
+        function frame(now) {
+            const dt = Math.min(0.05, (now - last) / 1000); last = now;
+            const f = FRACTALS[type];
+            const k = 1 - Math.exp(-dt * 6);
+            P.x += (T.x - P.x) * k; P.y += (T.y - P.y) * k;
+            stepCamera(dt);
+            computeParams();
+
+            o.clearRect(0, 0, W, H);
+            canvas.style.visibility = f.kind === 'escape' ? 'visible' : 'hidden';
+            if (f.kind === 'escape') {
+                if (gl) renderEscape();
+            } else {
+                o.save(); o.globalCompositeOperation = 'lighter';
+                ({ sierpinski: drawSierpinski, koch: drawKoch, dragon: drawDragon, tree: drawTree })[type]();
+                o.restore();
+            }
+            const point = selectedPoint();
+            const marker = point ? { px: SX(point.x), py: SY(point.y) } : null;
+            drawAxes(marker);
+            const hasOrbit = type === 'mandelbrot' || type === 'ship' || type === 'tricorn';
+            if (point && hasOrbit && orbitEnabled) drawOrbit(point);
+            else if (hasOrbit && orbitEnabled) $('iOrbitValues').textContent = TEXT[language].orbitAway;
+
+            if (point) {
+                $('iX').textContent = point.x.toFixed(6);
+                $('iY').textContent = point.y.toFixed(6);
+            }
+            $('iZoom').textContent = '×' + (f.view.s / view.s).toFixed(2);
+            $('iParam').textContent = f.params(prm);
+            currentSound();
+            requestAnimationFrame(frame);
+        }
+
+        // ---------- UI ----------
+        function setType(t) {
+            type = t;
+            const f = FRACTALS[t];
+            view = { ...f.view }; tv = { ...f.view };
+            lastEscapeKey = '';
+            T.x = P.x = f.init.x; T.y = P.y = f.init.y;
+            updateInfo();
+        }
+
+        function updateInfo() {
+            const f = FRACTALS[type], text = TEXT[language];
+            $('iName').textContent = text.names[type] || f.name;
+            $('iAuthor').textContent = text.authors[type] || f.author;
+            $('iEqLabel').textContent = f.kind === 'escape' ? text.equation : text.rule;
+            $('iEq').textContent = f.kind === 'escape' ? f.eq : text.rules[type];
+            $('iParamLabel').textContent = text.values;
+            $('iCoordLabel').textContent = text.coordinates;
+            $('iExplanation').textContent = text.explanations[type];
+            $('iColorHelp').textContent = f.kind === 'escape' ? text.colorHelp : '';
+            $('orbitSwitch').hidden = !['mandelbrot', 'ship', 'tricorn'].includes(type);
+            $('iOrbitLabel').textContent = text.orbit;
+            $('iOrbitHelp').textContent = text.orbitHelp;
+            $('iOrbitValues').textContent = text.orbitAway;
+            $('iXLabel').textContent = f.kind === 'escape' ? text.real : 'x';
+            $('iYLabel').textContent = f.kind === 'escape' ? text.imaginary : 'y';
+            updateOrbitControl();
+        }
+
+        // Botón desplegable que abre su menú hacia arriba
+        function makeDropdown(labelKey, keys, getCurrent, getName, onPick) {
+            const wrap = document.createElement('div');
+            wrap.className = 'dd';
+            const btn = document.createElement('button');
+            const menu = document.createElement('div');
+            menu.className = 'menu';
+            const items = {};
+            for (const k of keys) {
+                const item = document.createElement('div');
+                item.onclick = () => {
+                    wrap.classList.remove('open');
+                    onPick(k);
+                    refresh();
+                };
+                menu.appendChild(item);
+                items[k] = item;
+            }
+            btn.onclick = e => {
+                e.stopPropagation();
+                const wasOpen = wrap.classList.contains('open');
+                document.querySelectorAll('.dd.open').forEach(d => d.classList.remove('open'));
+                wrap.classList.toggle('open', !wasOpen);
+            };
+            wrap.append(btn, menu);
+            controls.appendChild(wrap);
+            function refresh() {
+                btn.textContent = TEXT[language][labelKey] + ': ' + getName(getCurrent()) + ' ▴';
+                for (const k of keys) items[k].textContent = getName(k);
+            }
+            refresh();
+            return refresh;
+        }
+        document.addEventListener('click', () =>
+            document.querySelectorAll('.dd.open').forEach(d => d.classList.remove('open')));
+
+        const refreshFractals = makeDropdown('fractal', Object.keys(FRACTALS), () => type,
+            k => TEXT[language].names[k] || FRACTALS[k].name, setType);
+        const refreshPalettes = makeDropdown('palette', Object.keys(PALETTES), () => palette,
+            k => TEXT[language].palettes[k], k => { palette = k; buildLut(); });
+        controls.appendChild($('orbitSwitch'));
+
+        function updateLanguage() {
+            const text = TEXT[language];
+            document.documentElement.lang = language;
+            $('info').setAttribute('aria-label', text.infoScroll);
+            $('languageToggle').textContent = text.languageButton;
+            $('languageToggle').lang = language === 'es' ? 'en' : 'es';
+            $('languageToggle').setAttribute('aria-label', text.languageLabel);
+            updateToggle(infoToggle, !infoDetails.hidden, text.showInfo, text.hideInfo, '+');
+            updateToggle(padToggle, !pad.hidden, text.showPad, text.hidePad, '✥');
+            pad.setAttribute('aria-label', text.pad);
+            for (const button of pad.querySelectorAll('button')) {
+                const label = text.buttons[button.dataset.act];
+                button.setAttribute('aria-label', label);
+                button.title = label;
+            }
+            updateInfo();
+            $('helpText').textContent = text.help;
+            setHelpOpen(!$('helpText').hidden);
+            updateMuteControl();
+            $('errorMessage').textContent = text.webglError;
+            $('errorMessage').hidden = !!gl;
+            refreshFractals();
+            refreshPalettes();
+        }
+        $('languageToggle').addEventListener('click', () => {
+            language = language === 'es' ? 'en' : 'es';
+            updateLanguage();
+        });
+
+        setType(type);
+        updateLanguage();
+        resize();
+        requestAnimationFrame(frame);
+    </script>
+</body>
+</html>
