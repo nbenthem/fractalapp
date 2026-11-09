@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reset SerePoints</title>
+</head>
+<body>
+  <h1>Reset All SerePoints to 0</h1>
+  <button onclick="resetPoints()">Reset Now</button>
+  <div id="result"></div>
+  
+  <script>
+    function resetPoints() {
+      try {
+        Object.keys(localStorage).forEach(k => {
+          if(k.startsWith('profile-')) {
+            const p = JSON.parse(localStorage.getItem(k) || '{}');
+            p.points = 0;
+            localStorage.setItem(k, JSON.stringify(p));
+          }
+        });
+        const main = JSON.parse(localStorage.getItem('profile') || '{}');
+        main.points = 0;
+        localStorage.setItem('profile', JSON.stringify(main));
+        document.getElementById('result').innerHTML = '<p style="color:green;">✓ All SerePoints reset to 0!</p>';
+      } catch(e) {
+        document.getElementById('result').innerHTML = '<p style="color:red;">Error: ' + e.message + '</p>';
+      }
+    }
+  </script>
+</body>
+</html>

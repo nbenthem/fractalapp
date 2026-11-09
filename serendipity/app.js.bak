@@ -1,0 +1,241 @@
+document.addEventListener("DOMContentLoaded", async () => {
+  const content = document.getElementById("content");
+  const navItems = document.querySelectorAll(".nav-item");
+
+  const res = await fetch("data.json");
+  let data = await res.json();
+
+  // aplicar perfil guardado si existe
+  try{
+    const storedProfile = localStorage.getItem('profile');
+    if(storedProfile) data.user = Object.assign({}, data.user, JSON.parse(storedProfile));
+  }catch(e){}
+
+  // Exponer `data` globalmente
+  window.data = data;
+
+  function sanitizeId(str){ return String(str).replace(/[^a-zA-Z0-9]/g,'-'); }
+
+  function getStoredComments(file){
+    try{ const raw = localStorage.getItem(`doc-comments-${file}`); return raw? JSON.parse(raw): []; }catch(e){ return []; }
+  }
+
+  function saveStoredComment(file, comment){
+    try{
+      const key = `doc-comments-${file}`;
+      const arr = getStoredComments(file);
+      arr.push(comment);
+      localStorage.setItem(key, JSON.stringify(arr));
+    }catch(e){ console.error(e); }
+  }
+
+  // Render comments for a specific document and attach delete handlers
+  function renderCommentsForDoc(file){
+    const el = document.getElementById(`comments-${sanitizeId(file)}`);
+    if(!el) return;
+    const d = data.docs.find(x => x.file === file) || { comments: [] };
+    const stored = getStoredComments(file);
+    const all = (d.comments||[]).concat(stored);
+    if(!all.length){
+      el.innerHTML = '<p class="card">No hay comentarios todavía.</p>';
+      return;
+    }
+
+    el.innerHTML = all.map(c => `
+      <div class="card comment-item" data-ts="${c.ts}">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+          <strong>@${c.user}</strong>
+          <span style="flex:1"></span>
+          ${c.user === (data.user.name||'') ? `<button class="btn small delete-comment" data-file="${file}" data-ts="${c.ts}">Eliminar</button>` : ''}
+        </div>
+        <p style="margin-top:0.5rem">${c.text}</p>
+      </div>
+    `).join('');
+
+    // attach delete handlers for this doc
+    el.querySelectorAll('.delete-comment').forEach(btn => {
+      btn.removeEventListener('click', deleteCommentHandler);
+      btn.addEventListener('click', deleteCommentHandler);
+    });
+  }
+
+  function deleteCommentHandler(e){
+    const file = e.currentTarget.dataset.file;
+    const ts = Number(e.currentTarget.dataset.ts);
+    if(!confirm('¿Eliminar este comentario? Esta acción no se puede deshacer.')) return;
+    try{
+      const key = `doc-comments-${file}`;
+      const arr = getStoredComments(file).filter(c => c.ts !== ts);
+      localStorage.setItem(key, JSON.stringify(arr));
+      // re-render comments for the doc
+      renderCommentsForDoc(file);
+    }catch(err){ console.error(err); alert('No se pudo eliminar el comentario.'); }
+  }
+
+  const sections = {
+    feed: () => `
+      <section>
+        <h2>Feed de la Comunidad</h2>
+        ${data.feed.map(p => `
+          <div class="card post">
+            <h3>@${p.user}</h3>
+            <p>${p.text}</p>
+            ${p.image? `<img src="${p.image}" alt="post image" class="post-image">` : ''}
+          </div>
+        `).join('')}
+      </section>
+    `,
+
+    docs: () => `
+      <section>
+        <h2>Documentos</h2>
+        ${data.docs.map(d => `
+          <div class="card doc-item" data-file="${d.file}">
+            <h3>${d.title}</h3>
+            <p>${d.desc}</p>
+            <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+              <a class="btn" href="${d.file}" download>Descargar</a>
+              <button class="btn start-thread" data-file="${d.file}">Comenzar hilo</button>
+            </div>
+            <div class="doc-comments" id="comments-${sanitizeId(d.file)}"></div>
+            <form class="comment-form" data-file="${d.file}" style="margin-top:0.5rem; display:none;">
+              <textarea name="comment" placeholder="Escribe un comentario público sobre este documento..." required style="width:100%; min-height:60px; padding:0.5rem;"></textarea>
+              <div style="margin-top:0.5rem;"><button class="btn" type="submit">Publicar comentario</button></div>
+            </form>
+          </div>
+        `).join('')}
+      </section>
+    `,
+
+    perfil: () => `
+      <section>
+        <h2>Tu Perfil</h2>
+        <div class="card profile-card">
+          <img src="${data.user.photo || 'https://i.pravatar.cc/100'}" alt="foto" class="profile-photo">
+          <p><strong id="profile-name">${data.user.name}</strong></p>
+          <p id="profile-points">Puntos: ${data.user.points || 0}</p>
+          <p id="profile-bio">${data.user.bio || ''}</p>
+          <div style="margin-top:1rem;">
+            <button class="btn" id="edit-profile-btn">Editar perfil</button>
+          </div>
+          <form id="edit-profile-form" style="margin-top:1rem; display:none;">
+            <label>Nombre<br><input type="text" name="name" value="${data.user.name||''}" required></label>
+            <label>Foto (URL)<br><input type="url" name="photo" value="${data.user.photo||''}"></label>
+            <label>Bio<br><textarea name="bio">${data.user.bio||''}</textarea></label>
+            <label>Ubicación<br><input type="text" name="location" value="${data.user.location||''}"></label>
+            <label>Sitio web<br><input type="url" name="website" value="${data.user.website||''}"></label>
+            <div style="margin-top:0.5rem;"><button class="btn" type="submit">Guardar</button></div>
+          </form>
+        </div>
+      </section>
+    `,
+
+    buscar: () => `
+      <section>
+        <h2>Buscar Usuarios</h2>
+        <input id="search" placeholder="Buscar..." class="card" style="width:100%; padding:0.8rem;">
+        <div id="search-results" style="margin-top:1rem;"></div>
+      </section>
+    `,
+
+    market: () => `
+      <section>
+        <h2>Mini Market</h2>
+        <div class="market-grid">
+          ${data.market.map(m => `
+            <div class="card market-item">
+              ${m.image? `<img src="${m.image}" alt="${m.name}" class="market-image">` : ''}
+              <h3>${m.name}</h3>
+              <p>${m.desc}</p>
+              <button class="btn buy-btn">Comprar (€${m.price})</button>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+    `
+  };
+
+  const renderSection = name => {
+    content.innerHTML = sections[name]();
+    navItems.forEach(i => i.classList.remove("active"));
+    const activeBtn = document.querySelector(`[data-section="${name}"]`);
+    if(activeBtn) activeBtn.classList.add("active");
+    postRender(name);
+  };
+
+  function postRender(name){
+    if(name === 'docs'){
+      // render comments for each doc and attach delete handlers
+      data.docs.forEach(d => {
+        const el = document.getElementById(`comments-${sanitizeId(d.file)}`);
+        if(!el) return;
+        renderCommentsForDoc(d.file);
+      });
+
+      document.querySelectorAll('.start-thread').forEach(btn => {
+        btn.removeEventListener('click', startThreadHandler);
+        btn.addEventListener('click', startThreadHandler);
+      });
+
+      document.querySelectorAll('.comment-form').forEach(form => {
+        form.removeEventListener('submit', commentFormHandler);
+        form.addEventListener('submit', commentFormHandler);
+      });
+    });
+
+    if(name === 'perfil'){
+      const editBtn = document.getElementById('edit-profile-btn');
+      const form = document.getElementById('edit-profile-form');
+      if(editBtn && form){
+        editBtn.addEventListener('click', () => { form.style.display = form.style.display === 'none' ? 'block' : 'none'; });
+        form.addEventListener('submit', e => {
+          e.preventDefault();
+          const fd = new FormData(form);
+          const updated = {
+            name: fd.get('name'),
+            photo: fd.get('photo'),
+            bio: fd.get('bio'),
+            location: fd.get('location'),
+            website: fd.get('website'),
+            points: data.user.points || 0
+          };
+          data.user = Object.assign({}, data.user, updated);
+          localStorage.setItem('profile', JSON.stringify(data.user));
+          renderSection('perfil');
+        });
+      }
+    }
+
+    if(name === 'market'){
+      document.querySelectorAll('.buy-btn').forEach(b => {
+        b.addEventListener('click', () => { alert('Función de compra no implementada en este demo.'); });
+      });
+    }
+  }
+
+  function startThreadHandler(e){
+    const file = e.currentTarget.dataset.file;
+    const form = document.querySelector(`.comment-form[data-file="${file}"]`);
+    if(form) form.style.display = form.style.display === 'none' ? 'block' : 'none';
+    const commentsEl = document.getElementById(`comments-${sanitizeId(file)}`);
+    if(commentsEl) commentsEl.scrollIntoView({behavior:'smooth'});
+  }
+
+  // navegación
+  navItems.forEach(i => i.addEventListener("click", () => renderSection(i.dataset.section)));
+
+  renderSection("feed");
+
+  // buscador dinámico
+  document.addEventListener("input", e => {
+    if (e.target.id === "search") {
+      const term = e.target.value.toLowerCase();
+      const results = data.users
+        .filter(u => u.name.toLowerCase().includes(term))
+        .map(u => `<div class="card">@${u.name} — ${u.bio}</div>`)
+        .join("");
+      const el = document.getElementById("search-results");
+      if(el) el.innerHTML = results || "<p>No se encontraron usuarios</p>";
+    }
+  });
+});

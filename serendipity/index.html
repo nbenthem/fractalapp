@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Serendipity</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <aside class="sidebar" id="sidebar" aria-label="Barra lateral" data-collapsed="false">
+    <nav>
+      <button class="nav-item" data-section="home">🏠<span class="nav-label">Home</span></button>
+      <button class="nav-item active" data-section="feed">📜<span class="nav-label">Feed</span></button>
+      <button class="nav-item" data-section="docs">📚<span class="nav-label">Docs</span></button>
+      <button class="nav-item" data-section="recommendations">⭐<span class="nav-label">Recos</span></button>
+      <button class="nav-item" data-section="perfil">👤<span class="nav-label">Profile</span></button>
+      <button class="nav-item" data-section="buscar">🔍<span class="nav-label">Search</span></button>
+      <button class="nav-item" data-section="mensajeria">🛩️<span class="nav-label">Messaging</span></button>
+      <button class="nav-item" data-section="dailybonus">📅<span class="nav-label">Daily Bonus</span></button>
+      <button class="nav-item" data-section="market">🛍️<span class="nav-label">Market</span></button>
+    </nav>
+  </aside>
+
+  <header>
+    <button id="hamburger" class="hamburger" aria-label="Toggle sidebar">☰</button>
+    <h1 class="logo">Serendipity</h1>
+    <button id="cart-btn" class="cart-btn" aria-label="Shopping cart" title="Shopping cart">
+      🛒 <span id="cart-count" class="cart-count">0</span>
+    </button>
+  </header>
+  
+  <!-- Shopping Cart Modal -->
+  <div id="cart-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:600px;">
+      <div class="modal-header">
+        <h3>Shopping Cart</h3>
+        <button class="modal-close" id="close-cart-modal">✕</button>
+      </div>
+      <div id="cart-items-container" style="max-height:400px; overflow-y:auto;">
+        <!-- Cart items will be rendered here -->
+      </div>
+      <div style="border-top:2px solid #eee; padding-top:1rem; margin-top:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+          <strong style="font-size:1.2rem;">Total:</strong>
+          <strong style="font-size:1.4rem; color:var(--rojo-coral);" id="cart-total">€0.00</strong>
+        </div>
+        <div style="display:flex; gap:0.5rem;">
+          <button class="btn" id="clear-cart-btn" style="background:#999;">Clear Cart</button>
+          <button class="btn" id="checkout-btn" style="flex:1;">Checkout</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main id="content">
+    <!-- Aquí se renderizarán las secciones -->
+  </main>
+
+  <footer id="footer">
+    <div class="footer-container">
+      <div class="footer-section">
+        <h3>Serendipity</h3>
+        <p>Connect, share and collaborate with the global community.</p>
+        <div class="footer-social">
+          <a href="#" title="Twitter">𝕏</a>
+          <a href="#" title="Instagram">📷</a>
+          <a href="#" title="GitHub">🐙</a>
+          <a href="#" title="LinkedIn">💼</a>
+        </div>
+      </div>
+      <div class="footer-section">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#">Características</a></li>
+          <li><a href="#">Precios</a></li>
+          <li><a href="#">Documentación</a></li>
+          <li><a href="#">API</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Community</h4>
+        <ul>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Foro</a></li>
+          <li><a href="#">Eventos</a></li>
+          <li><a href="#">Contribuir</a></li>
+        </ul>
+      </div>
+      <div class="footer-section">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Privacidad</a></li>
+          <li><a href="#">Términos</a></li>
+          <li><a href="#">Cookies</a></li>
+          <li><a href="#">Contacto</a></li>
+        </ul>
+      </div>
+    </div>
+      <div class="footer-bottom">
+      <p>&copy; 2025 Serendipity. All rights reserved.</p>
+      <p>Made with ❤️ for the community</p>
+    </div>
+  </footer>
+
+  <script>
+    // Datos incrustados directamente (sin necesidad de fetch)
+    window.appData = {
+      "user": {
+        "name": "Natbe",
+        "photo": "https://via.placeholder.com/80",
+        "points": 120
+      },
+      "feed": [
+        { "user": "Alice", "text": "Lanzamos la nueva sección de Documentos: comparte y comenta tus guías.", "image": "", "likes": 24, "timestamp": 1699862400000, "comments": [] },
+        { "user": "Bob", "text": "He subido un resumen técnico sobre accesibilidad web.", "image": "assets/bob.png", "likes": 18, "timestamp": 1699776000000, "comments": [] },
+        { "user": "Carol", "text": "Ideas para el mini market: ¿qué merchandising os gustaría ver?", "image": "", "likes": 32, "timestamp": 1699689600000, "comments": [] },
+        { "user": "DevTeam", "text": "Actualizamos la UI: títulos centrados y mejoras menores.", "image": "", "likes": 45, "timestamp": 1699603200000, "comments": [] },
+        { "user": "Eva", "text": "Acabo de terminar mi primera guía sobre rendimiento en front-end. Feedback bienvenido ✨", "image": "assets/eva.png", "likes": 12, "timestamp": 1699516800000, "comments": [] },
+        { "user": "Mateo", "text": "Hoy migré un proyecto monolítico a una arquitectura modular. Aprendí muchísimo.", "image": "", "likes": 27, "timestamp": 1699430400000, "comments": [] },
+        { "user": "Rosa", "text": "¿Alguien quiere colaborar en una mini serie de posts sobre accesibilidad cognitiva?", "image": "", "likes": 21, "timestamp": 1699344000000, "comments": [] },
+        { "user": "Ingrid", "text": "Publiqué un pequeño prototipo de tema oscuro con preferencias guardadas. Gracias por las pruebas!", "image": "", "likes": 19, "timestamp": 1699257600000, "comments": [] },
+        { "user": "Tomas", "text": "Refactoricé un módulo de autenticación y reduje el tamaño del bundle en 14%.", "image": "", "likes": 16, "timestamp": 1699171200000, "comments": [] },
+        { "user": "Lucía", "text": "Estoy diseñando un dashboard minimalista para métricas de comunidad. Pronto lo comparto.", "image": "assets/lucia.png", "likes": 8, "timestamp": 1699084800000, "comments": [] },
+        { "user": "Noel", "text": "Mini experimento: intentaré escribir una guía corta cada semana durante un mes.", "image": "", "likes": 14, "timestamp": 1698998400000, "comments": [] }
+      ],
+      "docs": [
+        { "title": "Guía de inicio rápido", "desc": "Cómo usar Serendipity: subir documentos, crear hilos y colaborar.", "file": "guia-inicio.pdf", "comments": [] },
+        { "title": "Buenas prácticas de contenido", "desc": "Recomendaciones para crear documentos claros y útiles.", "file": "buenas-practicas.pdf", "comments": [] },
+        { "title": "Rendimiento Front-End", "desc": "Checklist para optimizar tiempo de carga y respuesta en aplicaciones web.", "file": "rendimiento-frontend.pdf", "comments": [] },
+        { "title": "Accesibilidad esencial", "desc": "Patrones básicos para que tu contenido sea usable por más personas.", "file": "accesibilidad-esencial.pdf", "comments": [] },
+        { "title": "Guía microservicios intro", "desc": "Conceptos iniciales para pasar de un monolito a servicios pequeños.", "file": "microservicios-intro.pdf", "comments": [] },
+        { "title": "Testing pragmático", "desc": "Cómo escribir pruebas que realmente salvan bugs y tiempo.", "file": "testing-pragmatico.pdf", "comments": [] },
+        { "title": "Refactor seguro", "desc": "Estrategias para mejorar código sin romper producción.", "file": "refactor-seguro.pdf", "comments": [] },
+        
+        // Documentos fascinantes sobre conciencia, física cuántica y conocimiento interdisciplinario
+        { "title": "Fundamentos de Física Cuántica", "desc": "Exploración accesible de los principios fundamentales de la mecánica cuántica: superposición, entrelazamiento y el enigma del observador.", "file": "fisica-cuantica-fundamentos.pdf", "comments": [] },
+        { "title": "La Sintergía de Jacobo Grinberg", "desc": "La revolucionaria teoría de la sintergía del neurofisiólogo mexicano: cómo la conciencia genera la realidad a través de campos neurales.", "file": "grinberg-sinturgia.pdf", "comments": [] },
+        { "title": "Carl Jung: El Inconsciente Colectivo", "desc": "Exploración profunda de los arquetipos universales, la sincronicidad y la psicología analítica de Carl Gustav Jung.", "file": "jung-inconsciente-colectivo.pdf", "comments": [] },
+        { "title": "Carl Sagan: Cosmos y Conciencia", "desc": "La maravilla del cosmos según Sagan: desde el Big Bang hasta la búsqueda de vida extraterrestre y nuestro lugar en el universo.", "file": "sagan-cosmos-conciencia.pdf", "comments": [] },
+        { "title": "Conciencia Cuántica y Realidad", "desc": "Análisis interdisciplinario sobre la relación entre física cuántica y conciencia: ¿es la mente fundamental en la estructura del universo?", "file": "conciencia-cuantica.pdf", "comments": [] },
+        { "title": "Los Chamanes de México", "desc": "Estudio antropológico de Jacobo Grinberg sobre los chamanes mexicanos: estados alterados de conciencia y percepción no-ordinaria.", "file": "grinberg-chamanes-mexico.pdf", "comments": [] },
+        { "title": "Sincronicidad y Significado", "desc": "El concepto jungiano de sincronicidad: coincidencias significativas y la conexión acausal entre mente y materia.", "file": "jung-sincronicidad.pdf", "comments": [] },
+        { "title": "El Dragón del Edén", "desc": "La evolución de la inteligencia humana según Carl Sagan: desde los reptiles hasta la conciencia cósmica.", "file": "sagan-dragon-eden.pdf", "comments": [] },
+        { "title": "Mecánica Cuántica y Filosofía", "desc": "Implicaciones filosóficas de la física cuántica: realismo, determinismo y el papel del observador en la creación de la realidad.", "file": "cuantica-filosofia.pdf", "comments": [] },
+        { "title": "Neuropsicología de la Conciencia", "desc": "Investigaciones de Grinberg sobre los correlatos neurales de la experiencia consciente y los estados expandidos de percepción.", "file": "grinberg-neuropsicologia.pdf", "comments": [] },
+        { "title": "Arquetipos en la Cultura Moderna", "desc": "Cómo los arquetipos jungianos se manifiestan en el arte, la literatura, el cine y la cultura digital contemporánea.", "file": "jung-arquetipos-modernos.pdf", "comments": [] },
+        { "title": "Pale Blue Dot", "desc": "La perspectiva cósmica de Sagan: reflexiones sobre la fragilidad y preciosidad de la Tierra en la inmensidad del espacio.", "file": "sagan-pale-blue-dot.pdf", "comments": [] },
+        { "title": "Entrelazamiento Cuántico", "desc": "El fenómeno más misterioso de la física: partículas conectadas instantáneamente a través de cualquier distancia.", "file": "entrelazamiento-cuantico.pdf", "comments": [] },
+        { "title": "La Experiencia Psi", "desc": "Estudios rigurosos de Grinberg sobre fenómenos psi: telepatía, precognición y la interacción mente-materia.", "file": "grinberg-experiencia-psi.pdf", "comments": [] },
+        { "title": "El Hombre y sus Símbolos", "desc": "La última obra de Jung: cómo los símbolos del inconsciente moldean nuestra percepción y experiencia del mundo.", "file": "jung-hombre-simbolos.pdf", "comments": [] },
+        { "title": "Contact: Ciencia y Ficción", "desc": "La novela de Sagan que explora el primer contacto extraterrestre: ciencia rigurosa, filosofía y las implicaciones para la humanidad.", "file": "sagan-contact.pdf", "comments": [] },
+        { "title": "Interpretaciones de la Mecánica Cuántica", "desc": "Las múltiples interpretaciones: Copenhague, muchos mundos, Bohm y las implicaciones para nuestra comprensión de la realidad.", "file": "interpretaciones-cuanticas.pdf", "comments": [] },
+        { "title": "Chamanismo y Neurociencia", "desc": "Puente entre la sabiduría ancestral y la neurociencia moderna: estados alterados, plantas maestras y mapas de la conciencia.", "file": "chamanismo-neurociencia.pdf", "comments": [] },
+        { "title": "Psicología Arquetipal", "desc": "Desarrollo de la psicología jungiana: individuación, sombra, ánima/ánimus y el camino hacia la totalidad psíquica.", "file": "jung-psicologia-arquetipal.pdf", "comments": [] },
+        { "title": "Escepticismo Científico", "desc": "La metodología de Sagan para distinguir ciencia de pseudociencia: pensamiento crítico en la era de la información.", "file": "sagan-escepticismo-cientifico.pdf", "comments": [] },
+        { "title": "Campos Morfogenéticos y Conciencia", "desc": "Teorías de campos de información: Sheldrake, Grinberg y las nuevas fronteras de la investigación en conciencia.", "file": "campos-morfogeneticos.pdf", "comments": [] },
+        { "title": "Mitología y Psique", "desc": "Jung y Campbell: cómo los mitos universales reflejan estructuras profundas de la psique humana.", "file": "jung-mitologia-psique.pdf", "comments": [] },
+        { "title": "Bioastronomía y SETI", "desc": "La búsqueda de vida extraterrestre: desde las ecuaciones de Drake hasta los hallazgos de exoplanetas habitables.", "file": "sagan-bioastronomia-seti.pdf", "comments": [] },
+        { "title": "Coherencia Cuántica en Sistemas Biológicos", "desc": "Evidencias de efectos cuánticos en la fotosíntesis, el cerebro y otros sistemas vivos: ¿es la vida cuántica por naturaleza?", "file": "coherencia-cuantica-biologica.pdf", "comments": [] }
+      ],
+      "users": [
+          { "name": "Carlos", "bio": "Community member", "description": "Apasionado por la tecnología y la comunidad. Me encanta compartir conocimientos y ayudar a otros a crecer." },
+          { "name": "Maria", "bio": "Designer", "description": "Diseñadora UI/UX con más de 5 años de experiencia. Especializada en crear interfaces intuitivas y hermosas." },
+          { "name": "Alex", "bio": "Frontend dev", "description": "Desarrollador frontend que ama JavaScript y React. Siempre aprendiendo nuevas tecnologías." },
+          { "name": "Lisa", "bio": "Product manager", "description": "Product manager enfocada en crear productos que realmente importen. Fan del design thinking y metodologías ágiles." },
+          { "name": "Sam", "bio": "QA engineer", "description": "Ingeniero de QA dedicado a la calidad del software. Me especializo en automatización de pruebas." },
+          { "name": "Jordan", "bio": "Content creator", "description": "Creador de contenido digital y copywriter. Ayudo a marcas a contar sus historias de forma auténtica." },
+          { "name": "Eva", "bio": "Guide author", "description": "Escribo guías técnicas sencillas que ayudan a despejar bloqueos iniciales." },
+          { "name": "Mateo", "bio": "Backend dev", "description": "Me enfoco en arquitectura limpia y rendimiento en servicios distribuidos." },
+          { "name": "Rosa", "bio": "Accessibility advocate", "description": "Difundo mejores prácticas para que la web sea más inclusiva." },
+          { "name": "Ingrid", "bio": "UI tinkerer", "description": "Itero interfaces ligeras y componentes reutilizables. Fan del detalle." },
+          { "name": "Tomas", "bio": "Security engineer", "description": "Analizo riesgos y enseño patrones seguros de autenticación." },
+          { "name": "Lucía", "bio": "Data analyst", "description": "Convierto métricas en historias accionables para producto y comunidad." },
+          { "name": "Noel", "bio": "Content planner", "description": "Organizo series temáticas y experimentos de aprendizaje colaborativo." },
+          { "name": "Sara", "bio": "DevOps", "description": "Automatizo pipelines y me obsesiona la observabilidad clara." },
+          { "name": "Pedro", "bio": "Fullstack dev", "description": "Conecto front y back con soluciones simples mantenibles." }
+        ],
+      "market": [
+        { "name": "Camiseta Serendipity", "desc": "Camiseta oficial de algodón premium", "price": 19.99, "image": "assets/camiseta.png" },
+        { "name": "Sudadera Serendipity", "desc": "Sudadera con capucha, edición limitada", "price": 34.99, "image": "assets/sudadera.png" },
+        { "name": "Taza Serendipity", "desc": "Taza blanca de cerámica", "price": 9.99, "image": "assets/taza.png" },
+        { "name": "Botella Serendipity", "desc": "Botella de agua reutilizable", "price": 14.99, "image": "assets/botella.png" },
+        { "name": "Calcetines Serendipity", "desc": "Calcetines divertidos y cómodos", "price": 7.99, "image": "assets/calcetines.png" },
+        { "name": "Pegatinas Serendipity", "desc": "Pack de pegatinas exclusivas", "price": 3.99, "image": "assets/pegatinas.png" },
+        { "name": "Gorra Serendipity", "desc": "Gorra ajustable con logo", "price": 12.99, "image": "assets/gorra.png" },
+        { "name": "Mousepad Serendipity", "desc": "Alfombrilla de ratón antideslizante", "price": 8.99, "image": "assets/mousepad.png" }
+      ]
+    };
+  </script>
+
+  <!-- Upload Document Modal -->
+  <div id="upload-doc-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:540px;">
+      <div class="modal-header">
+        <h3>Upload Document</h3>
+        <button class="modal-close" id="close-upload-doc">✕</button>
+      </div>
+      <form id="upload-doc-form">
+        <div class="form-group">
+          <label>Title *</label>
+          <input type="text" name="title" placeholder="Document title" required>
+        </div>
+        <div class="form-group">
+          <label>Description *</label>
+          <textarea name="desc" placeholder="Brief description of the document..." required style="min-height:80px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>File URL or name (optional if uploading file)</label>
+          <input type="text" name="file" placeholder="https://example.com/doc.pdf or example.pdf">
+        </div>
+        <div class="form-group">
+          <label>Upload file (optional)</label>
+          <input type="file" name="docFile">
+          <small style="color:#666; display:block; margin-top:0.25rem;">Upload a real file for download. Any file type accepted. ~5MB max recommended.</small>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+          <button type="submit" class="btn" style="flex:1;">Upload</button>
+          <button type="button" class="btn" id="cancel-upload-doc" style="background:#999;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- New Post Modal -->
+  <div id="new-post-modal" class="modal" style="display:none;">
+    <div class="modal-content" style="max-width:540px;">
+      <div class="modal-header">
+        <h3>Create Post</h3>
+        <button class="modal-close" id="close-new-post">✕</button>
+      </div>
+      <form id="new-post-form">
+        <div class="form-group">
+          <label>What's on your mind? *</label>
+          <textarea name="text" placeholder="Share your thoughts, progress, or questions..." required style="min-height:100px;"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Add image (optional)</label>
+          <input type="file" name="postImage" accept="image/*">
+          <small style="color:#666; display:block; margin-top:0.25rem;">JPG, PNG, GIF, or WEBP</small>
+        </div>
+        <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+          <button type="submit" class="btn" style="flex:1;">Post</button>
+          <button type="button" class="btn" id="cancel-new-post" style="background:#999;">Cancel</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="feed.js"></script>
+  <script src="home.js"></script>
+  <script src="recommendations.js"></script>
+  <script src="docs.js"></script>
+  <script src="perfil.js"></script>
+  <script src="search.js"></script>
+  <script src="mensajeria.js"></script>
+  <script src="dailybonus.js"></script>
+  <script src="market.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
+

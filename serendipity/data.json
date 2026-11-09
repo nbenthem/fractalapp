@@ -1,0 +1,49 @@
+{
+  "user": {
+    "name": "Natbe",
+    "photo": "https://via.placeholder.com/80",
+    "points": 120
+  },
+  "feed": [
+    { "user": "Alice", "text": "Lanzamos la nueva sección de Documentos: comparte y comenta tus guías.", "image": "https://via.placeholder.com/400x200?text=Documentos" },
+    { "user": "Bob", "text": "He subido un resumen técnico sobre accesibilidad web.", "image": "https://via.placeholder.com/400x200?text=Accesibilidad" },
+    { "user": "Carol", "text": "Ideas para el mini market: ¿qué merchandising os gustaría ver?", "image": "https://via.placeholder.com/400x200?text=Merch" },
+    { "user": "DevTeam", "text": "Actualizamos la UI: títulos centrados y mejoras menores.", "image": "https://via.placeholder.com/400x200?text=UI+Update" }
+  ],
+  "docs": [
+    { "title": "Guía de inicio rápido", "desc": "Cómo usar Serendipity: subir documentos, crear hilos y colaborar.", "file": "guia-inicio.pdf", "comments": [] },
+    { "title": "Buenas prácticas de contenido", "desc": "Recomendaciones para crear documentos claros y útiles.", "file": "buenas-practicas.pdf", "comments": [] }
+  ],
+  "users": [
+    {
+      "name": "Carlos",
+      "bio": "Frontend developer and open source enthusiast.",
+      "photo": "https://i.pravatar.cc/120?img=3",
+      "email": "carlos@example.com",
+      "website": "https://carlos.dev",
+      "location": "Madrid, Spain",
+      "social": { "twitter": "https://twitter.com/carlos_dev", "github": "https://github.com/carlos" },
+      "points": 42
+    },
+    {
+      "name": "María",
+      "bio": "Content strategist and reader. Loves long-form essays and coffee.",
+      "photo": "https://i.pravatar.cc/120?img=5",
+      "email": "maria@example.com",
+      "website": "https://maria.blog",
+      "location": "Barcelona, Spain",
+      "social": { "instagram": "https://instagram.com/maria", "linkedin": "https://linkedin.com/in/maria" },
+      "points": 58
+    }
+  ],
+  "market": [
+    { "name": "Camiseta Serendipity", "desc": "Camiseta oficial de algodón premium", "price": 19.99, "image": "assets/camiseta.png" },
+    { "name": "Sudadera Serendipity", "desc": "Sudadera con capucha, edición limitada", "price": 34.99, "image": "assets/sudadera.png" },
+    { "name": "Taza Serendipity", "desc": "Taza blanca de cerámica", "price": 9.99, "image": "assets/taza.png" },
+    { "name": "Botella Serendipity", "desc": "Botella de agua reutilizable", "price": 14.99, "image": "assets/botella.png" },
+    { "name": "Calcetines Serendipity", "desc": "Calcetines divertidos y cómodos", "price": 7.99, "image": "assets/calcetines.png" },
+    { "name": "Pegatinas Serendipity", "desc": "Pack de pegatinas exclusivas", "price": 3.99, "image": "assets/pegatinas.png" },
+    { "name": "Gorra Serendipity", "desc": "Gorra ajustable con logo", "price": 12.99, "image": "assets/gorra.png" },
+    { "name": "Mousepad Serendipity", "desc": "Alfombrilla de ratón antideslizante", "price": 8.99, "image": "assets/mousepad.png" }
+  ]
+}
